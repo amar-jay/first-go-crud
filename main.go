@@ -20,6 +20,14 @@ type Director struct {
   SurName string `json: "second_name"`
 }
 
+type Response struct {
+  response string `json: "response"`
+}
+/**
+* ./main.go:79:29: syntax error: unexpected {, expecting expression
+./main.go:80:5: syntax error: unexpected type, expecting comma or )
+./main.go:81:4: syntax error: unexpected ) after top level declaration
+* */
 var MovieList []Movie
 
 func deleteMovie(w http.ResponseWriter, r *http.Request) {
@@ -48,7 +56,9 @@ func updateMovie(w http.ResponseWriter, r *http.Request) {
 
   for i, movie := range MovieList {
     if movie.Id == params["id"] {
-      movies = append(MovieList[:i], updatedmovie, MovieList[i+1:])
+      otherhalf := MovieList[i+1:]
+      MovieList = append(MovieList[:i], updatedmovie)
+      MovieList = append(MovieList, otherhalf...)
       json.NewEncoder(w).Encode(updatedmovie)
       return
     }
@@ -73,12 +83,10 @@ func createMovie(w http.ResponseWriter, r *http.Request) {
   w.Header().Set("Content-Type", "application/json")
   var movie Movie
   _ = json.NewDecoder(r.Body).Decode(&movie)
-  movie.Id = strconv.Itoa(len(MovieList))
+  movie.Id = strconv.Itoa(len(MovieList) + 1)
 
   MovieList = append(MovieList, movie)
-  json.NewEncoder(w).Encode({
-    type: "successfull"
-  })
+  json.NewEncoder(w).Encode(MovieList)
   return
 }
 
@@ -92,7 +100,7 @@ func main(){
   sampleMovies()
   r.HandleFunc("/", getAllMovies).Methods("GET")
   r.HandleFunc("/{id}", getMovie).Methods("GET")
-  r.HandleFunc("/create/{id}", createMovie).Methods("POST")
+  r.HandleFunc("/create/", createMovie).Methods("POST")
   r.HandleFunc("/update/{id}", updateMovie).Methods("PUT")
   r.HandleFunc("/delete/{id}", deleteMovie).Methods("DELETE")
 
